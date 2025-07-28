@@ -5,7 +5,7 @@ import { getSyncedNow } from '../utils/timeSync';
 const BOARD_WIDTH = 10;
 const BOARD_HEIGHT = 20;
 const GAME_DURATION = 180;
-const OPPONENT_TIMEOUT = 10000;
+const OPPONENT_TIMEOUT = 5000;
 
 const isMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -49,7 +49,7 @@ const useGameLoop = (callback, speed) => {
 };
 
 export default function Tetris({ sessionId, myAddress, players }) {
-    const mySeed = parseInt(myAddress.slice(2, 10), 16);
+    const mySeed = getSyncedNow() + parseInt(myAddress.slice(2, 10), 16);
     
     const [blockSize, setBlockSize] = useState(20);
     const [board, setBoard] = useState(createEmptyBoard());
@@ -142,12 +142,8 @@ export default function Tetris({ sessionId, myAddress, players }) {
             if (opponentData.gameOver && !opponentGameOver) {
                 setOpponentGameOver(true);
             }
-            
-            if (opponentData.gameEnded && !gameEnded) {
-                endGame("Oponente terminou o jogo");
-            }
         }
-    }, [sharedState, gameEnded, opponentGameOver, endGame]);
+    }, [sharedState, gameEnded, opponentGameOver]);
 
     useEffect(() => {
         if (gameEnded) return;
@@ -416,11 +412,11 @@ export default function Tetris({ sessionId, myAddress, players }) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleKeyDown]);
     
-    let endMessageTitle = "O TEMPO ACABOU!";
+    let endMessageTitle = "Acabou o tempo!";
     if (opponentAbandoned) {
-        endMessageTitle = "O OPONENTE SAIU!";
+        endMessageTitle = "O oponente saiu!";
     } else if (winner === 'You' && opponentGameOver) {
-        endMessageTitle = "O OPONENTE PERDEU!";
+        endMessageTitle = "O oponente perdeu!";
     } else if (winner === 'Opponent' && gameOver) {
         endMessageTitle = "GAME OVER";
     }
@@ -457,8 +453,8 @@ export default function Tetris({ sessionId, myAddress, players }) {
                                     <p className="text-xl md:text-2xl mt-2">{winner === 'You' ? 'Você ganhou!' : `${opponentName} ganhou!`}</p>
                                 ) : null
                             )}
-
-                            <p className="mt-2 text-md">Pontuação Final: {score} vs {opponentScore}</p>
+                            
+                            <p className="mt-2 text-md">Pontução final: {score} vs {opponentScore}</p>
                         </div>
                     )}
                 </div>
@@ -471,7 +467,7 @@ export default function Tetris({ sessionId, myAddress, players }) {
                     <p className="text-2xl">{Math.floor(timeLeft / 60)}:{('0' + (timeLeft % 60)).slice(-2)}</p>
                 </div>
                 <div className="flex flex-col items-center">
-                    <p>Próximo:</p>
+                    <p>Próxima:</p>
                     <canvas
                         ref={nextCanvasRef}
                         width={4 * blockSize}
