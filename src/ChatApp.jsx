@@ -1615,7 +1615,7 @@ export default function ChatApp() {
                                 <i className="fas fa-info-circle"></i> Sobre
                             </button>
 
-                            <appkit-button />
+                            <appkit-button label="Conectar Carteira" />
 
                         </>
                     )}
@@ -2045,7 +2045,7 @@ export default function ChatApp() {
                             <i className="fas fa-eye mr-2"></i>
                             Você está no modo somente leitura.
                         </p>
-                        <appkit-button class="inline-block" />
+                        <appkit-button class="inline-block" label="Conectar Carteira" />
                         
                     </div>
                 )}
