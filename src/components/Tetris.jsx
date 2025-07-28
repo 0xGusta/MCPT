@@ -5,7 +5,7 @@ import { getSyncedNow } from '../utils/timeSync';
 const BOARD_WIDTH = 10;
 const BOARD_HEIGHT = 20;
 const GAME_DURATION = 180;
-const OPPONENT_TIMEOUT = 5000;
+const OPPONENT_TIMEOUT = 10000;
 
 const isMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -214,14 +214,16 @@ export default function Tetris({ sessionId, myAddress, players }) {
     
     const resetPlayer = useCallback(() => {
         const newTetromino = nextTetromino || getRandomTetromino(pieceSeed);
-        setPieceSeed(prev => prev + 1);
-        const newNextTetromino = getRandomTetromino(pieceSeed + 1);
-        setNextTetromino(newNextTetromino);
+        const nextPieceSeed = pieceSeed + 1;
+        const newNextTetromino = getRandomTetromino(nextPieceSeed);
+
         setPlayer({
             pos: { x: Math.floor(BOARD_WIDTH / 2) - 1, y: 0 },
             tetromino: newTetromino,
             collided: false,
         });
+        setNextTetromino(newNextTetromino);
+        setPieceSeed(nextPieceSeed);
     }, [nextTetromino, pieceSeed]);
     
     useEffect(() => {
@@ -316,9 +318,11 @@ export default function Tetris({ sessionId, myAddress, players }) {
                     }
                 });
             });
+
             let linesCleared = 0;
             const clearedBoard = newBoard.filter(row => !row.every(cell => cell[0] !== 0));
             linesCleared = BOARD_HEIGHT - clearedBoard.length;
+
             if (linesCleared > 0) {
                 const newLines = Array.from({ length: linesCleared }, () => Array(BOARD_WIDTH).fill([0, '#000000']));
                 setBoard([...newLines, ...clearedBoard]);
@@ -326,9 +330,9 @@ export default function Tetris({ sessionId, myAddress, players }) {
             } else {
                 setBoard(newBoard);
             }
-            resetPlayer();
+            setPlayer(prev => ({ ...prev, tetromino: null }));
         }
-    }, [player.collided, board, player.tetromino, player.pos.x, player.pos.y, resetPlayer]);
+    }, [player.collided, board, player.tetromino, player.pos.x, player.pos.y, setScore]);
     
     useGameLoop(() => {
         if (!gameOver && !gameEnded) {
@@ -411,14 +415,14 @@ export default function Tetris({ sessionId, myAddress, players }) {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleKeyDown]);
-
+    
     let endMessageTitle = "O TEMPO ACABOU!";
     if (opponentAbandoned) {
-        endMessageTitle = "OPONENTE ABANDONOU!";
+        endMessageTitle = "O OPONENTE SAIU!";
     } else if (winner === 'You' && opponentGameOver) {
-        endMessageTitle = "OPONENTE PERDEU!";
+        endMessageTitle = "O OPONENTE PERDEU!";
     } else if (winner === 'Opponent' && gameOver) {
-        endMessageTitle = "FIM DE JOGO!";
+        endMessageTitle = "GAME OVER";
     }
 
     return (
@@ -453,21 +457,21 @@ export default function Tetris({ sessionId, myAddress, players }) {
                                     <p className="text-xl md:text-2xl mt-2">{winner === 'You' ? 'Você ganhou!' : `${opponentName} ganhou!`}</p>
                                 ) : null
                             )}
-                            
-                            <p className="mt-2 text-md">Placar final: {score} vs {opponentScore}</p>
+
+                            <p className="mt-2 text-md">Pontuação Final: {score} vs {opponentScore}</p>
                         </div>
                     )}
                 </div>
             </div>
             
             <div className="info-panel flex flex-row justify-around items-center w-full max-w-4xl mt-2 text-sm md:text-base">
-                <p>Score: {score}</p>
+                <p>Pontuação: {score}</p>
                 <div className="text-center">
                     <p className="font-bold text-lg">Tempo</p>
                     <p className="text-2xl">{Math.floor(timeLeft / 60)}:{('0' + (timeLeft % 60)).slice(-2)}</p>
                 </div>
                 <div className="flex flex-col items-center">
-                    <p>Next:</p>
+                    <p>Próximo:</p>
                     <canvas
                         ref={nextCanvasRef}
                         width={4 * blockSize}
@@ -475,7 +479,7 @@ export default function Tetris({ sessionId, myAddress, players }) {
                         className="border border-gray-600 mt-1"
                     />
                 </div>
-                <p>Placar do Oponente: {opponentScore}</p>
+                <p>Pontuação do oponente: {opponentScore}</p>
             </div>
             
             <div className="controls-info mt-4 w-full max-w-sm">
@@ -490,7 +494,7 @@ export default function Tetris({ sessionId, myAddress, players }) {
                 ) : (
                     <div className="pc-controls bg-gray-800 p-3 rounded-lg text-sm text-center">
                         <h4 className="font-bold mb-1">Controles:</h4>
-                        <p><span className="font-bold">←/→:</span> Mover | <span className="font-bold">↑:</span> Girar | <span className="font-bold">↓:</span> Soft Drop | <span className="font-bold">Space:</span> Hard Drop</p>
+                        <p><span className="font-bold">←/→:</span> Mover | <span className="font-bold">↑:</span> Girar | <span className="font-bold">↓:</span> Soft Drop | <span className="font-bold">Espaço:</span> Hard Drop</p>
                     </div>
                 )}
             </div>
