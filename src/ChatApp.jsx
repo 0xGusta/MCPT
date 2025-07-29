@@ -909,37 +909,38 @@ export default function ChatApp() {
     };
     
     const sendMessage = async () => {
-        
+        if (!walletClient) {
+            showPopup('Carteira não conectada para enviar a transação.', 'error');
+            return;
+        }
         if (!newMessage.trim() && !selectedImage && !selectedGifUrl) return;
-
+    
         showPopup('Enviando mensagem...', 'info', true);
-
         try {
+            const currentSigner = await walletClientToSigner(walletClient);
+            const contractWithSigner = new ethers.Contract(CONTRACT_ADDRESS, ABI, currentSigner);
+    
             const textContent = newMessage.trim();
-            let imageHashContent = ''; 
+            let imageHashContent = '';
             const replyId = replyingTo ? replyingTo.id : 0;
-
+    
             if (selectedImage) {
                 setUploading(true);
                 imageHashContent = await uploadToIPFS(selectedImage, setUploadProgress);
             } else if (selectedGifUrl) {
-                
                 imageHashContent = selectedGifUrl;
             }
-
-            const tx = await contract.enviarMensagem(textContent, imageHashContent, replyId);
+    
+            const tx = await contractWithSigner.enviarMensagem(textContent, imageHashContent, replyId);
             await tx.wait();
-            
-
+    
             setNewMessage('');
             setSelectedImage(null);
             setSelectedGifUrl(null);
             setReplyingTo(null);
             setEditingMessage(null);
-
             hidePopup();
             showPopup('Mensagem enviada!', 'success');
-
         } catch (error) {
             hidePopup();
             const friendlyMessage = getFriendlyErrorMessage(error);
@@ -949,75 +950,91 @@ export default function ChatApp() {
             setUploadProgress(0);
         }
     };
-
+    
     const editMessage = async (messageId, newContent) => {
+        if (!walletClient) {
+            showPopup('Carteira não conectada para editar a transação.', 'error');
+            return;
+        }
         try {
             showPopup('Editando mensagem...', 'info', true);
-            const tx = await contract.editarMensagem(messageId, newContent);
+            const currentSigner = await walletClientToSigner(walletClient);
+            const contractWithSigner = new ethers.Contract(CONTRACT_ADDRESS, ABI, currentSigner);
+            const tx = await contractWithSigner.editarMensagem(messageId, newContent);
             await tx.wait();
             hidePopup();
             showPopup('Mensagem editada!', 'success');
             setEditingMessage(null);
             setNewMessage('');
-            
         } catch (error) {
             hidePopup();
             const friendlyMessage = getFriendlyErrorMessage(error);
             showPopup(friendlyMessage, 'error');
         }
     };
-
+    
     const deleteMessage = async (messageId) => {
+        if (!walletClient) {
+            showPopup('Carteira não conectada para deletar a transação.', 'error');
+            return;
+        }
         try {
             showPopup('Deletando mensagem...', 'info', true);
-            const tx = await contract.excluirMensagem(messageId);
+            const currentSigner = await walletClientToSigner(walletClient);
+            const contractWithSigner = new ethers.Contract(CONTRACT_ADDRESS, ABI, currentSigner);
+            const tx = await contractWithSigner.excluirMensagem(messageId);
             await tx.wait();
             hidePopup();
             showPopup('Mensagem deletada!', 'success');
-
         } catch (error) {
             hidePopup();
             const friendlyMessage = getFriendlyErrorMessage(error);
             showPopup(friendlyMessage, 'error');
         }
     };
-
-    const registerUser = async (username, profilePicHash = '') => { 
-        try { 
-            showPopup('Registrando usuário...', 'info', true); 
-            const tx = await contract.registrarUsuario(username, profilePicHash); 
-            await tx.wait(); 
-            hidePopup(); 
-            showPopup('Usuário registrado com sucesso!', 'success'); 
-            await loadUserProfile(contract, address); 
-
-            if (provider && address) {
-                const newBalance = await provider.getBalance(address);
-                setBalance(ethers.formatEther(newBalance));
-            }
-
+    
+    const registerUser = async (username, profilePicHash = '') => {
+        if (!walletClient) {
+            showPopup('Carteira não conectada para registrar.', 'error');
+            return;
+        }
+        try {
+            showPopup('Registrando usuário...', 'info', true);
+            const currentSigner = await walletClientToSigner(walletClient);
+            const contractWithSigner = new ethers.Contract(CONTRACT_ADDRESS, ABI, currentSigner);
+            const tx = await contractWithSigner.registrarUsuario(username, profilePicHash);
+            await tx.wait();
+            hidePopup();
+            showPopup('Usuário registrado com sucesso!', 'success');
+            await loadUserProfile(contractWithSigner, address);
+            refetchBalance();
         } catch (error) {
             hidePopup();
-            const friendlyMessage = getFriendlyErrorMessage(error); 
-            showPopup(friendlyMessage, 'error'); 
-        } 
+            const friendlyMessage = getFriendlyErrorMessage(error);
+            showPopup(friendlyMessage, 'error');
+        }
     };
     
     const updateProfile = async (username, profilePicHash) => {
+        if (!walletClient) {
+            showPopup('Carteira não conectada para atualizar.', 'error');
+            return;
+        }
         try {
             showPopup('Atualizando perfil...', 'info', true);
-            const tx = await contract.atualizarPerfil(username, profilePicHash);
+            const currentSigner = await walletClientToSigner(walletClient);
+            const contractWithSigner = new ethers.Contract(CONTRACT_ADDRESS, ABI, currentSigner);
+            const tx = await contractWithSigner.atualizarPerfil(username, profilePicHash);
             await tx.wait();
             hidePopup();
             showPopup('Perfil atualizado!', 'success');
-            await loadUserProfile(contract, address);
+            await loadUserProfile(contractWithSigner, address);
         } catch (error) {
             hidePopup();
             const friendlyMessage = getFriendlyErrorMessage(error);
             showPopup(friendlyMessage, 'error');
         }
     };
-
 
     const sendMON = async (recipientAddress, amount) => {
         try {
@@ -1047,8 +1064,11 @@ export default function ChatApp() {
         }
     };
 
-
     const banUser = async (username) => {
+        if (!walletClient) {
+            showPopup('Carteira não conectada para banir.', 'error');
+            return;
+        }
         try {
             const userAddress = await contract.usernameToAddress(username);
             if (userAddress === ethers.ZeroAddress) {
@@ -1056,20 +1076,24 @@ export default function ChatApp() {
                 return;
             }
             showPopup('Banindo usuário...', 'info', true);
-            const tx = await contract.banirUsuario(userAddress);
+            const currentSigner = await walletClientToSigner(walletClient);
+            const contractWithSigner = new ethers.Contract(CONTRACT_ADDRESS, ABI, currentSigner);
+            const tx = await contractWithSigner.banirUsuario(userAddress);
             await tx.wait();
             hidePopup();
             showPopup('Usuário banido!', 'success');
-
         } catch (error) {
             hidePopup();
             const friendlyMessage = getFriendlyErrorMessage(error);
             showPopup(friendlyMessage, 'error');
         }
     };
-
-
+    
     const unbanUser = async (username) => {
+        if (!walletClient) {
+            showPopup('Carteira não conectada para desbanir.', 'error');
+            return;
+        }
         try {
             const userAddress = await contract.usernameToAddress(username);
             if (userAddress === ethers.ZeroAddress) {
@@ -1077,7 +1101,9 @@ export default function ChatApp() {
                 return;
             }
             showPopup('Desbanindo usuário...', 'info', true);
-            const tx = await contract.desbanirUsuario(userAddress);
+            const currentSigner = await walletClientToSigner(walletClient);
+            const contractWithSigner = new ethers.Contract(CONTRACT_ADDRESS, ABI, currentSigner);
+            const tx = await contractWithSigner.desbanirUsuario(userAddress);
             await tx.wait();
             hidePopup();
             showPopup('Usuário desbanido!', 'success');
@@ -1087,9 +1113,12 @@ export default function ChatApp() {
             showPopup(friendlyMessage, 'error');
         }
     };
-
-
+    
     const addModerator = async (username) => {
+        if (!walletClient) {
+            showPopup('Carteira não conectada para adicionar moderador.', 'error');
+            return;
+        }
         try {
             const userAddress = await contract.usernameToAddress(username);
             if (userAddress === ethers.ZeroAddress) {
@@ -1097,7 +1126,9 @@ export default function ChatApp() {
                 return;
             }
             showPopup('Adicionando moderador...', 'info', true);
-            const tx = await contract.adicionarModerador(userAddress);
+            const currentSigner = await walletClientToSigner(walletClient);
+            const contractWithSigner = new ethers.Contract(CONTRACT_ADDRESS, ABI, currentSigner);
+            const tx = await contractWithSigner.adicionarModerador(userAddress);
             await tx.wait();
             hidePopup();
             showPopup('Moderador adicionado!', 'success');
@@ -1107,8 +1138,12 @@ export default function ChatApp() {
             showPopup(friendlyMessage, 'error');
         }
     };
-
+    
     const removeModerator = async (username) => {
+        if (!walletClient) {
+            showPopup('Carteira não conectada para remover moderador.', 'error');
+            return;
+        }
         try {
             const userAddress = await contract.usernameToAddress(username);
             if (userAddress === ethers.ZeroAddress) {
@@ -1116,7 +1151,9 @@ export default function ChatApp() {
                 return;
             }
             showPopup('Removendo moderador...', 'info', true);
-            const tx = await contract.removerModerador(userAddress);
+            const currentSigner = await walletClientToSigner(walletClient);
+            const contractWithSigner = new ethers.Contract(CONTRACT_ADDRESS, ABI, currentSigner);
+            const tx = await contractWithSigner.removerModerador(userAddress);
             await tx.wait();
             hidePopup();
             showPopup('Moderador removido!', 'success');
