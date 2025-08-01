@@ -37,8 +37,8 @@ Siga estas instruções para obter uma cópia do projeto e executá-la em sua m�
 
 1.  **Clone o repositório:**
     ```sh
-    git clone https://github.com/0xGusta/mcen.git
-    cd mcen
+    git clone https://github.com/0xGusta/mcpt.git
+    cd mcpt
     ```
 
 2.  **Instale as dependências:**
