@@ -98,9 +98,7 @@
 }
 
 .online-counter {
-    color: #a5b4fc;
-    font-size: 0.8rem;
-    margin-left: 8px;
+    display: none;
 }
 
 .online-status-dot {
@@ -463,13 +461,7 @@
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 .status-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
+    display: none;
 }
 .status-connected {
     background: rgba(16, 185, 129, 0.1);
@@ -740,10 +732,7 @@
     }
 
     .online-status-dot {
-    bottom: 33px;
-    right: 2px;
-    width: 12px;
-    height: 12px;
+    display: none;
     }
 
     .messages {
