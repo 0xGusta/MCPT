@@ -27,34 +27,6 @@ export default function ProfileModal({ isOpen, onClose, userAddress, userProfile
                             {isOwnProfile && (<button onClick={onEditProfile} className="btn btn-secondary flex-1"><i className="fas fa-edit"></i>Editar Perfil</button>)}
                             {isConnected && !isOwnProfile && (<button onClick={() => onSendMON(userAddress)} className="btn btn-primary flex-1"><i className="fas fa-coins"></i> Enviar MON</button>)}
                         </div>
-                        {isConnected && !isOwnProfile && (
-                             <div className="flex flex-col md:flex-row gap-2 justify-center mt-2">
-                                <button
-                                  onClick={() => {
-                                    onChallengeUser(userAddress, userProfile?.username, 'jogodavelha');
-                                    onClose();
-                                  }}
-                                  className="btn btn-primary flex-1"
-                                  disabled={!isOnline}
-                                  title="Desafiar para um jogo de Jogo da Velha"
-                                >
-                                  <i className="fas fa-times"></i><i class="fa-solid fa-o"></i> Desafiar (Jogo da Velha)
-                                  {!isOnline && ' (offline)'}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    onChallengeUser(userAddress, userProfile?.username, 'tetris');
-                                    onClose();
-                                  }}
-                                  className="btn btn-primary flex-1"
-                                  disabled={!isOnline}
-                                  title="Desafiar para um jogo de Tetris"
-                                >
-                                  <i className="fas fa-cubes"></i> Desafiar (Tetris)
-                                  {!isOnline && ' (offline)'}
-                                </button>
-                             </div>
-                        )}
 
                         {(isOwner || isModerator) && !isOwnProfile && (
                             <div className="flex flex-row gap-2 justify-center mt-2">
